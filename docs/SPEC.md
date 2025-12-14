@@ -4,8 +4,8 @@
 
 | 項目 | URL |
 |-----|-----|
+| **本番環境** | https://research-assistant.up.railway.app/ |
 | GitHub | https://github.com/sinnsyakai/research-assistant |
-| Railway | ※Railwayダッシュボードで確認 |
 | ローカル | http://localhost:3000 |
 
 ---
