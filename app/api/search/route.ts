@@ -150,7 +150,17 @@ Return ONLY simple English keywords (no quotes, no OR):`;
                 }
 
                 const res = await fetch(u.toString());
-                return await res.json();
+                const data = await res.json();
+
+                // Debug logging
+                if (data.error) {
+                    console.error('[Google API Error]', JSON.stringify(data.error));
+                }
+                if (!data.items) {
+                    console.log('[Google API] No items returned. searchInformation:', JSON.stringify(data.searchInformation || {}));
+                }
+
+                return data;
             };
 
             const uiPage = parseInt(page) || 1;
