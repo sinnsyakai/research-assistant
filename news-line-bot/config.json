@@ -1,0 +1,47 @@
+{
+    "genres": [
+        {
+            "id": "education",
+            "name": "教育ニュース",
+            "keywords": [
+                "学校教育",
+                "不登校 支援",
+                "部活 地域移行",
+                "学力低下",
+                "教員 働き方改革",
+                "AI教育 事例",
+                "GIGAスクール"
+            ],
+            "maxItems": 3
+        },
+        {
+            "id": "ai",
+            "name": "AI・テック",
+            "keywords": [
+                "生成AI 最新",
+                "AIエージェント",
+                "ChatGPT 新機能",
+                "Gemini アップデート",
+                "Claude 活用",
+                "LLM ビジネス"
+            ],
+            "maxItems": 3
+        },
+        {
+            "id": "sns",
+            "name": "SNSトレンド",
+            "keywords": [
+                "YouTube トレンド",
+                "TikTok ビジネス活用",
+                "Instagram アルゴリズム",
+                "ショート動画 収益化",
+                "インフルエンサー マーケティング"
+            ],
+            "maxItems": 3
+        }
+    ],
+    "globalSettings": {
+        "searchPeriod": "d1",
+        "sendToLine": true
+    }
+}
