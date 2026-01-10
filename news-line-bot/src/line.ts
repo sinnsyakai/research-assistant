@@ -1,116 +1,41 @@
-import { messagingApi } from '@line/bot-sdk';
+import { Client, TextMessage } from '@line/bot-sdk';
 import dotenv from 'dotenv';
-import { CuratedNews } from './ai';
 
 dotenv.config();
 
-const { MessagingApiClient } = messagingApi;
+const client = process.env.LINE_CHANNEL_ACCESS_TOKEN
+    ? new Client({
+        channelAccessToken: process.env.LINE_CHANNEL_ACCESS_TOKEN,
+        channelSecret: process.env.LINE_CHANNEL_SECRET,
+    })
+    : null;
 
-const CHANNEL_ACCESS_TOKEN = process.env.LINE_CHANNEL_ACCESS_TOKEN;
-const client = new MessagingApiClient({
-    channelAccessToken: CHANNEL_ACCESS_TOKEN || ''
-});
-
-export const sendNewsReport = async (genre: string, news: CuratedNews[]) => {
-    if (!CHANNEL_ACCESS_TOKEN) {
-        console.error('ERROR: LINE Configuration missing');
+export const sendNewsReport = async (genreName: string, newsList: any[]) => {
+    if (!client) {
+        console.error('LINE Client not initialized');
         return;
     }
-    if (news.length === 0) return;
 
-    // Construct Flex Message
-    const bubbles: messagingApi.FlexBubble[] = news.map(item => ({
-        type: 'bubble',
-        header: {
-            type: 'box',
-            layout: 'vertical',
-            contents: [
-                {
-                    type: 'text',
-                    text: item.title,
-                    weight: 'bold',
-                    size: 'sm',
-                    wrap: true,
-                    color: '#1DB446'
-                }
-            ]
-        },
-        body: {
-            type: 'box',
-            layout: 'vertical',
-            contents: [
-                {
-                    type: 'text',
-                    text: item.summary,
-                    size: 'xs',
-                    color: '#666666',
-                    wrap: true,
-                    maxLines: 3
-                },
-                {
-                    type: 'separator',
-                    margin: 'md'
-                }
-            ]
-        },
-        footer: {
-            type: 'box',
-            layout: 'vertical',
-            contents: [
-                {
-                    type: 'button',
-                    style: 'link',
-                    height: 'sm',
-                    action: {
-                        type: 'uri',
-                        label: '記事を読む',
-                        uri: item.url
-                    }
-                }
-            ]
-        }
-    }));
+    // Format as simple text list
+    // Limit to 5000 chars (LINE limit), currently safe with 10 items
 
-    // Header Bubble
-    const headerBubble: messagingApi.FlexBubble = {
-        type: 'bubble',
-        body: {
-            type: 'box',
-            layout: 'vertical',
-            contents: [
-                {
-                    type: 'text',
-                    text: `📰 ${genre} News Check`,
-                    weight: 'bold',
-                    size: 'xl'
-                },
-                {
-                    type: 'text',
-                    text: `${new Date().toLocaleDateString('ja-JP')} の注目ニュース`,
-                    size: 'xs',
-                    color: '#aaaaaa'
-                }
-            ]
-        }
-    };
+    let messageText = `【${genreName}】最新ニュース\n\n`;
 
-    const carousel: messagingApi.FlexCarousel = {
-        type: 'carousel',
-        contents: [headerBubble, ...bubbles]
+    messageText += newsList.map((item, index) => {
+        return `・${item.title}\n${item.url}`;
+    }).join('\n\n');
+
+    messageText += `\n\n(以上 ${newsList.length}件)`;
+
+    const message: TextMessage = {
+        type: 'text',
+        text: messageText
     };
 
     try {
-        await client.broadcast({
-            messages: [
-                {
-                    type: 'flex',
-                    altText: `${genre}の最新ニュースが届きました`,
-                    contents: carousel
-                }
-            ]
-        });
-        console.log(`[LINE] Broadcast sent for ${genre}`);
+        await client.broadcast([message]);
+        console.log(`[LINE] Broadcast sent for ${genreName}`);
     } catch (error: any) {
-        console.error('[LINE Error]', error.originalError?.response?.data || error);
+        console.error(`[LINE Error] ${error.originalError?.message || error.message}`);
     }
 };

@@ -2,59 +2,88 @@ import { loadConfig } from './config';
 import { searchNews } from './search';
 import { curateNews } from './ai';
 import { sendNewsReport } from './line';
+import { isDuplicate, addToHistory } from './history';
 
-const main = async () => {
+// Export for server usage
+export const runBot = async () => {
     console.log('🚀 Starting News Bot...');
 
     const config = loadConfig();
     const settings = config.globalSettings;
 
-    const targetGenreId = process.argv[2]; // Optional: npm start education
+    // Use process.argv only if run directly, otherwise use all genres
+    const targetGenreId = (require.main === module) ? process.argv[2] : undefined;
+
     const targetGenres = targetGenreId
         ? config.genres.filter(g => g.id === targetGenreId)
         : config.genres;
 
     if (targetGenres.length === 0) {
         console.error(`Unknown genre: ${targetGenreId}`);
-        process.exit(1);
+        // Do not exit process if triggered by server
+        if (require.main === module) process.exit(1);
+        return;
     }
+
+    const resultsSummary = [];
 
     for (const genre of targetGenres) {
         console.log(`\n--- Processing Genre: ${genre.name} ---`);
 
         // 1. Search
         console.log(`Searching for: ${genre.keywords.join(', ')}`);
-        // Use configured search period
-        const searchResults = await searchNews(genre.keywords, settings.searchPeriod || 'd1');
-        console.log(`Found ${searchResults.length} raw items.`);
+        const rawResults = await searchNews(genre.keywords, settings.searchPeriod || 'd2');
+        console.log(`Found ${rawResults.length} raw items.`);
 
-        if (searchResults.length === 0) {
+        if (rawResults.length === 0) {
             console.log('No recent news found.');
             continue;
         }
 
-        // 2. AI Curation
-        console.log('Curating with AI...');
-        // Pass maxItems from config
-        const curatedNews = await curateNews(searchResults, genre.name, genre.maxItems);
-        console.log(`Selected ${curatedNews.length} important items.`);
+        // 2. Filter Duplicates (Before AI)
+        const newItemsRaw = rawResults.filter(item => {
+            if (isDuplicate(item.link, item.title)) {
+                return false;
+            }
+            return true;
+        });
+        console.log(`After deduplication: ${newItemsRaw.length} items remaining.`);
 
-        if (curatedNews.length === 0) {
-            console.log('AI filtered out all items (nothing important enough).');
+        if (newItemsRaw.length === 0) {
+            console.log('All found news were already sent.');
             continue;
         }
 
-        // 3. Send to LINE
+        // 3. AI Curation
+        console.log('Curating with AI...');
+        const curatedNews = await curateNews(newItemsRaw, genre.name, genre.maxItems);
+        console.log(`Selected ${curatedNews.length} important items.`);
+
+        if (curatedNews.length === 0) {
+            console.log('AI filtered out all items.');
+            continue;
+        }
+
+        // 4. Send to LINE
         if (settings.sendToLine) {
             console.log('Sending to LINE...');
             await sendNewsReport(genre.name, curatedNews);
+
+            // 5. Save to History
+            addToHistory(curatedNews.map(n => ({ url: n.url, title: n.title })));
+            console.log('Saved to history.');
+            resultsSummary.push(`${genre.name}: Sent ${curatedNews.length} items.`);
         } else {
             console.log('Skipping LINE send (disabled in config).');
-            console.log(JSON.stringify(curatedNews, null, 2));
+            resultsSummary.push(`${genre.name}: Skipped (Dry Run) ${curatedNews.length} items.`);
         }
     }
 
     console.log('\n✅ All Done!');
+    return resultsSummary;
 };
 
-main().catch(err => console.error(err));
+// Check if run directly
+if (require.main === module) {
+    runBot().catch(err => console.error(err));
+}

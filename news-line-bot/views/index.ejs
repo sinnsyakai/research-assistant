@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>News Bot 管理画面</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            padding: 20px;
+        }
+
+        .card {
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border: none;
+        }
+
+        .header {
+            margin-bottom: 30px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header d-flex justify-content-between align-items-center">
+            <h1>🤖 News Bot Manager</h1>
+            <form action="/run" method="post" onsubmit="return confirm('今すぐニュース配信を実行しますか？');">
+                <button type="submit" class="btn btn-primary btn-lg">🚀 今すぐ実行</button>
+            </form>
+        </div>
+
+        <% if (message) { %>
+            <div class="alert alert-info">
+                <%= message %>
+            </div>
+            <% } %>
+
+                <div class="row">
+                    <div class="col-md-8">
+                        <div class="card">
+                            <div class="card-header bg-dark text-white">設定エディタ (config.json)</div>
+                            <div class="card-body">
+                                <form action="/config" method="post">
+                                    <div class="mb-3">
+                                        <label class="form-label">JSON設定</label>
+                                        <textarea name="config" class="form-control font-monospace"
+                                            rows="20"><%= JSON.stringify(config, null, 2) %></textarea>
+                                    </div>
+                                    <div class="d-flex justify-content-end">
+                                        <button type="submit" class="btn btn-success">💾 設定を保存</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-4">
+                        <div class="card">
+                            <div class="card-header">スケジュール設定</div>
+                            <div class="card-body">
+                                <p>現在の日時 (Server): <br><strong>
+                                        <%= new Date().toLocaleString() %>
+                                    </strong></p>
+                                <form action="/schedule" method="post">
+                                    <div class="mb-3">
+                                        <label class="form-label">Cron スケジュール (分 時 * * *)</label>
+                                        <input type="text" name="schedule" class="form-control" value="<%= schedule %>">
+                                        <div class="form-text">例: <code>0 8 * * *</code> (毎日朝8時)</div>
+                                    </div>
+                                    <button type="submit" class="btn btn-secondary w-100">スケジュール更新</button>
+                                </form>
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <div class="card-header">使い方</div>
+                            <div class="card-body">
+                                <ul>
+                                    <li><strong>keywords</strong>: 検索キーワード</li>
+                                    <li><strong>maxItems</strong>: 1回に送る記事数</li>
+                                    <li><strong>searchPeriod</strong>: 検索期間 (d1=1日, d2=2日...)</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+    </div>
+</body>
+
+</html>
