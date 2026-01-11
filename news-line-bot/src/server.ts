@@ -68,22 +68,52 @@ app.get('/', (req, res) => {
 
 app.post('/config', (req, res) => {
     try {
-        const newConfig = JSON.parse(req.body.config);
-        // Preserve schedule if not in newConfig (or strictly take from newConfig)
-        // Let's assume the user edits the full JSON, so we save what they give.
-        saveConfig(newConfig);
-        setupCron(); // Refresh cron if schedule changed inside JSON
+        const config = loadConfig();
+
+        // Update schedule from hour dropdown
+        const scheduleHour = req.body.scheduleHour || '8';
+        config.schedule = `0 ${scheduleHour} * * *`;
+
+        // Update search period
+        if (req.body.searchPeriod) {
+            config.globalSettings = config.globalSettings || {};
+            config.globalSettings.searchPeriod = req.body.searchPeriod;
+        }
+
+        // Update genres from form fields
+        const genreCount = parseInt(req.body.genreCount) || 0;
+        for (let i = 0; i < genreCount; i++) {
+            const genreId = req.body[`genreId_${i}`];
+            const genreName = req.body[`genreName_${i}`];
+            const maxItems = parseInt(req.body[`maxItems_${i}`]) || 5;
+            const keywordsText = req.body[`keywords_${i}`] || '';
+            const keywords = keywordsText.split('\n')
+                .map((k: string) => k.trim())
+                .filter((k: string) => k.length > 0);
+
+            // Find and update the genre
+            const genre = config.genres.find((g: any) => g.id === genreId);
+            if (genre) {
+                genre.name = genreName;
+                genre.maxItems = maxItems;
+                genre.keywords = keywords;
+            }
+        }
+
+        saveConfig(config);
+        setupCron();
+
         res.render('index', {
-            config: newConfig,
-            schedule: newConfig.schedule,
-            message: '設定を保存しました✅'
+            config,
+            schedule: config.schedule,
+            message: '✅ 設定を保存しました'
         });
-    } catch (e) {
+    } catch (e: any) {
         const config = loadConfig();
         res.render('index', {
             config,
             schedule: config.schedule,
-            message: '❌ エラー: JSON形式が正しくありません'
+            message: `❌ エラー: ${e.message}`
         });
     }
 });
