@@ -18,12 +18,13 @@ const runBot = async () => {
         : config.genres;
     if (targetGenres.length === 0) {
         console.error(`Unknown genre: ${targetGenreId}`);
-        // Do not exit process if triggered by server
         if (require.main === module)
             process.exit(1);
         return;
     }
-    const resultsSummary = [];
+    // Collect all results first
+    const allResults = [];
+    const allItemsForHistory = [];
     for (const genre of targetGenres) {
         console.log(`\n--- Processing Genre: ${genre.name} ---`);
         // 1. Search
@@ -54,22 +55,32 @@ const runBot = async () => {
             console.log('AI filtered out all items.');
             continue;
         }
-        // 4. Send to LINE
-        if (settings.sendToLine) {
-            console.log('Sending to LINE...');
-            await (0, line_1.sendNewsReport)(genre.name, curatedNews);
-            // 5. Save to History
-            (0, history_1.addToHistory)(curatedNews.map(n => ({ url: n.url, title: n.title })));
-            console.log('Saved to history.');
-            resultsSummary.push(`${genre.name}: Sent ${curatedNews.length} items.`);
-        }
-        else {
-            console.log('Skipping LINE send (disabled in config).');
-            resultsSummary.push(`${genre.name}: Skipped (Dry Run) ${curatedNews.length} items.`);
-        }
+        // Collect results for combined sending
+        allResults.push({
+            genreName: genre.name,
+            items: curatedNews
+        });
+        // Collect for history
+        allItemsForHistory.push(...curatedNews.map(n => ({ url: n.url, title: n.title })));
+    }
+    // 4. Send all genres in ONE message
+    if (settings.sendToLine && allResults.length > 0) {
+        console.log('\nSending combined message to LINE...');
+        await (0, line_1.sendCombinedNewsReport)(allResults);
+        // 5. Save all to History
+        (0, history_1.addToHistory)(allItemsForHistory);
+        console.log('Saved to history.');
+    }
+    else if (allResults.length === 0) {
+        console.log('\nNo new news to send.');
+    }
+    else {
+        console.log('\nSkipping LINE send (disabled in config).');
     }
     console.log('\n✅ All Done!');
-    return resultsSummary;
+    // Return summary
+    const totalItems = allResults.reduce((sum, g) => sum + g.items.length, 0);
+    return `${totalItems}件のニュースを1通で送信しました`;
 };
 exports.runBot = runBot;
 // Check if run directly

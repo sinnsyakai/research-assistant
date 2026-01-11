@@ -1,5 +1,6 @@
 {
-    "schedule": "0 8 * * *",
+    "schedule": "",
+    "autoScheduleEnabled": false,
     "genres": [
         {
             "id": "education",
@@ -13,7 +14,7 @@
                 "AI教育 事例",
                 "GIGAスクール"
             ],
-            "maxItems": 10
+            "maxItems": 6
         },
         {
             "id": "ai",
@@ -26,7 +27,7 @@
                 "Claude 活用",
                 "LLM ビジネス"
             ],
-            "maxItems": 10
+            "maxItems": 6
         },
         {
             "id": "sns",
@@ -38,7 +39,7 @@
                 "ショート動画 収益化",
                 "インフルエンサー マーケティング"
             ],
-            "maxItems": 10
+            "maxItems": 6
         }
     ],
     "globalSettings": {

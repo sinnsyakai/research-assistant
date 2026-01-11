@@ -33,10 +33,17 @@ const saveConfig = (config) => {
 let currentTask = null;
 const setupCron = () => {
     const config = loadConfig();
-    const schedule = config.schedule || '0 8 * * *';
+    // Stop existing task if any
     if (currentTask) {
         currentTask.stop();
+        currentTask = null;
     }
+    // Check if auto-schedule is enabled
+    if (!config.autoScheduleEnabled) {
+        console.log('[Scheduler] Auto-schedule is disabled. Manual trigger only.');
+        return;
+    }
+    const schedule = config.schedule || '0 8 * * *';
     if (node_cron_1.default.validate(schedule)) {
         console.log(`[Scheduler] Setting up cron: ${schedule}`);
         currentTask = node_cron_1.default.schedule(schedule, () => {
