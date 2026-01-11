@@ -1,0 +1,13 @@
+# Force Railway/Nixpacks to build and run from news-line-bot directory
+
+[phases.setup]
+nixPkgs = ['nodejs_18', 'npm-9_x']
+
+[phases.install]
+cmds = ['cd news-line-bot && npm ci']
+
+[phases.build]
+cmds = ['cd news-line-bot && npm run build']
+
+[start]
+cmd = 'cd news-line-bot && node dist/server.js'
