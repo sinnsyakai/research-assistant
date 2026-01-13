@@ -1,6 +1,6 @@
 {
-    "schedule": "",
-    "autoScheduleEnabled": false,
+    "schedule": "0 8 * * *",
+    "autoScheduleEnabled": true,
     "genres": [
         {
             "id": "education",

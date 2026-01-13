@@ -45,30 +45,18 @@ export const sendCombinedNewsReport = async (allResults: { genreName: string; it
         return;
     }
 
-    // Build combined message
+    // Build combined message with title + URL together
     let messageText = `📰 今日のニュースまとめ\n`;
     messageText += `━━━━━━━━━━━━━━━\n\n`;
 
     for (const genre of allResults) {
         if (genre.items.length === 0) continue;
 
-        messageText += `【${genre.genreName}】\n`;
+        messageText += `【${genre.genreName}】\n\n`;
 
         for (const item of genre.items) {
             messageText += `・${item.title}\n`;
-        }
-        messageText += `\n`;
-    }
-
-    // Add URLs section at the bottom
-    messageText += `━━━━━━━━━━━━━━━\n`;
-    messageText += `📎 記事リンク\n\n`;
-
-    let linkIndex = 1;
-    for (const genre of allResults) {
-        for (const item of genre.items) {
-            messageText += `${linkIndex}. ${item.url}\n`;
-            linkIndex++;
+            messageText += `${item.url}\n\n`;
         }
     }
 
