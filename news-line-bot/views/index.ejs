@@ -218,6 +218,21 @@
                     <!-- スケジュール設定 -->
                     <div class="card">
                         <div class="card-title">⏰ 配信スケジュール</div>
+
+                        <!-- 自動配信ON/OFF -->
+                        <div
+                            style="margin-bottom: 1rem; padding: 1rem; background: rgba(99, 102, 241, 0.1); border-radius: 8px;">
+                            <label style="display: flex; align-items: center; gap: 0.75rem; cursor: pointer;">
+                                <input type="checkbox" name="autoScheduleEnabled" value="true"
+                                    <%=config.autoScheduleEnabled ? 'checked' : '' %>
+                                style="width: 20px; height: 20px; accent-color: var(--primary);">
+                                <span style="font-weight: 600;">自動配信を有効にする</span>
+                            </label>
+                            <div class="help-text" style="margin-left: 2rem;">
+                                ONにすると、指定した時刻に毎日自動で配信されます
+                            </div>
+                        </div>
+
                         <div class="schedule-grid">
                             <div>
                                 <label class="form-label">配信時刻</label>
@@ -229,7 +244,7 @@
                                         </option>
                                         <% } %>
                                 </select>
-                                <div class="help-text">毎日この時刻に自動配信されます</div>
+                                <div class="help-text">毎日この時刻に自動配信</div>
                             </div>
                             <div>
                                 <label class="form-label">検索期間</label>

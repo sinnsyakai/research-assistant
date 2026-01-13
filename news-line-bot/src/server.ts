@@ -79,6 +79,9 @@ app.post('/config', (req, res) => {
     try {
         const config = loadConfig();
 
+        // Update auto-schedule toggle (checkbox: present = true, absent = false)
+        config.autoScheduleEnabled = req.body.autoScheduleEnabled === 'true';
+
         // Update schedule from hour dropdown
         const scheduleHour = req.body.scheduleHour || '8';
         config.schedule = `0 ${scheduleHour} * * *`;
