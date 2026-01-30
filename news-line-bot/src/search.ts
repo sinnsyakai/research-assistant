@@ -34,25 +34,37 @@ const fetchGoogle = async (query: string, dateRestrict: string = 'd1'): Promise<
     };
 
     try {
+        console.log(`[Search] Fetching: "${query}" (dateRestrict: ${dateRestrict})`);
         const res = await axios.get(url, { params });
         const items = res.data.items || [];
+        console.log(`[Search] Raw results for "${query}": ${items.length} items`);
 
         // Filter Logic
-        return items.filter((item: any) => {
+        const filtered = items.filter((item: any) => {
             const url = item.link;
             const title = item.title;
             const snippet = item.snippet;
 
             // Blocked Patterns
             for (const pattern of BLOCKED_PATTERNS) {
-                if (pattern.test(url)) return false;
+                if (pattern.test(url)) {
+                    console.log(`[Search] Blocked: ${url}`);
+                    return false;
+                }
             }
 
             // Must contain Japanese characters (Simple check)
-            if (!/[\u3040-\u30FF\u4E00-\u9FAF]/.test(title + snippet)) return false;
+            if (!/[\u3040-\u30FF\u4E00-\u9FAF]/.test(title + snippet)) {
+                console.log(`[Search] No Japanese: ${title}`);
+                return false;
+            }
 
             return true;
-        }).map((item: any) => ({
+        });
+
+        console.log(`[Search] After filtering: ${filtered.length} items`);
+
+        return filtered.map((item: any) => ({
             title: item.title,
             link: item.link,
             snippet: item.snippet,
@@ -61,6 +73,7 @@ const fetchGoogle = async (query: string, dateRestrict: string = 'd1'): Promise<
 
     } catch (error: any) {
         console.error('[Google Search Error]', error.response?.data?.error || error.message);
+        console.error('[Google Search Error] Full response:', JSON.stringify(error.response?.data || {}));
         return [];
     }
 };
