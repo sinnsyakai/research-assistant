@@ -12,7 +12,7 @@ const curateNews = async (searchResults, genreName, maxItems = 3) => {
     if (!GEMINI_KEY || searchResults.length === 0)
         return [];
     const genAI = new generative_ai_1.GoogleGenerativeAI(GEMINI_KEY);
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' }); // Use flash for speed/cost
+    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' }); // Stable version
     // Prepare prompt
     const inputData = JSON.stringify(searchResults.map(r => ({
         title: r.title,

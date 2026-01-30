@@ -22,7 +22,7 @@ export const curateNews = async (
     if (!GEMINI_KEY || searchResults.length === 0) return [];
 
     const genAI = new GoogleGenerativeAI(GEMINI_KEY);
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' }); // Use flash for speed/cost
+    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' }); // Stable version
 
     // Prepare prompt
     const inputData = JSON.stringify(searchResults.map(r => ({
