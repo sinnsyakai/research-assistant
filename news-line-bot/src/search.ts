@@ -22,10 +22,13 @@ const fetchGoogle = async (query: string, dateRestrict: string = 'd1'): Promise<
     }
 
     const url = 'https://www.googleapis.com/customsearch/v1';
+    const exclusion = '-site:twitter.com -site:x.com -site:facebook.com -site:instagram.com -site:tiktok.com -site:youtube.com -site:note.com';
+    const finalQuery = `${query} ${exclusion}`;
+
     const params = {
         key: GOOGLE_KEY,
         cx: CSE_ID,
-        q: query,
+        q: finalQuery,
         num: 10,
         dateRestrict: dateRestrict,
         gl: 'jp',
@@ -90,12 +93,21 @@ export const searchNews = async (queries: string[], dateRestrict: string = 'd1')
         allResults = [...allResults, ...res];
     });
 
-    // Dedup by Link
+    // Dedup by Normalized Link
     const seen = new Set();
     const uniqueResults = allResults.filter(item => {
-        if (seen.has(item.link)) return false;
-        seen.add(item.link);
-        return true;
+        try {
+            const u = new URL(item.link);
+            const normalized = `${u.protocol}//${u.hostname}${u.pathname}`; // Ignore Query Params
+            if (seen.has(normalized)) return false;
+            seen.add(normalized);
+            return true;
+        } catch (e) {
+            // Fallback to strict link if URL parse fails
+            if (seen.has(item.link)) return false;
+            seen.add(item.link);
+            return true;
+        }
     });
 
     return uniqueResults;

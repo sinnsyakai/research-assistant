@@ -48,5 +48,14 @@ export const BLOCKED_PATTERNS = [
     /hatsugen\./i,
     /niigatamom/i,
     /\/edua\/|\/adv\/|\/pr\/|\/sponsored\//i,
-    /\/advertorial\/|\/native-ad\//i
+    /\/advertorial\/|\/native-ad\//i,
+    /twitter\.com/i,
+    /x\.com/i,
+    /facebook\.com/i,
+    /instagram\.com/i,
+    /tiktok\.com/i,
+    /youtube\.com/i,
+    /linkedin\.com/i,
+    /note\.com/i, // Often personal blogs, though some are good. User wants "News".
+    /ameblo\.jp/i
 ];

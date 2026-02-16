@@ -20,26 +20,33 @@ const curateNews = async (searchResults, genreName, maxItems = 3) => {
         snippet: r.snippet
     })));
     const prompt = `
-You are a professional news editor for a busy executive.
-Your task is to review the following search results about "${genreName}" and select the most important news.
+You are an elite news editor for a busy executive who wants only the most impactful information.
+Your task is to curate the top ${maxItems} news items from the provided search results for the genre "${genreName}".
 
 ### Input Data
 ${inputData}
 
-### Filtering Rules
-1. **Remove Noise**: Exclude PR times, press releases of minor updates, "how-to" guides, affiliate blogs, and generic forum discussions.
-2. **Prioritize Impact**: Select news that indicates a trend shift, major industry move, structural change in society, or significant new technology.
-3. **Freshness**: Focus on breaking news or recent analysis.
+### Filtering Rules (STRICT)
+1. **Exclude Noise & Social Buzz**:
+   - IGNORE individual opinions, X/Twitter posts, "summary of reactions", and "viral topics" unless it is a major societal phenomenon.
+   - EXCLUDE "how-to" guides, affiliate blogs, game wikis, and minor app updates.
+   - EXCLUDE press releases about minor partnerships or events.
+2. **Prioritize High Impact**:
+   - Focus on: Structural changes in industry/society, major government policies, significant tech breakthroughs, and leading company strategic moves.
+   - If the news is "common knowledge" or "trivial daily update", skip it.
+3. **Deduplicate**:
+   - If multiple results cover the same story, pick ONLY the one with the most credible source and informative title. Do not output the same story twice.
 
 ### Output JSON Format
-Select top ${maxItems} news items. Return a JSON array.
+Return a JSON array of objects.
 [
   {
-    "title": "Clear, catchy title in Japanese (max 40 chars)",
+    "title": "Clear, objective title (Japanese, max 40 chars)",
     "url": "Original URL",
-    "summary": "Concise summary of WHY this matters (max 80 chars)",
+    "summary": "Why this is important (max 80 chars)",
     "category": "${genreName}",
-    "importance": 5 (1-5 scale)
+    "importance": 5 (Score 1-5. Only output items with score >= 3),
+    "reason": "Brief reason why this was selected (for internal logic)"
   }
 ]
 

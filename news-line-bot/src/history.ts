@@ -30,14 +30,27 @@ const saveHistory = (history: HistoryItem[]) => {
     fs.writeFileSync(HISTORY_FILE, JSON.stringify(history, null, 2));
 };
 
+// Helper to normalize URL (remove query params)
+const normalizeUrl = (url: string): string => {
+    try {
+        const u = new URL(url);
+        // Keep only path, remove query/hash for deduplication
+        return `${u.protocol}//${u.hostname}${u.pathname}`;
+    } catch (e) {
+        return url;
+    }
+};
+
 export const isDuplicate = (url: string, title?: string): boolean => {
     const history = loadHistory();
-    // Check URL exact match
-    if (history.some(item => item.url === url)) return true;
-    
+    const normalizedUrl = normalizeUrl(url);
+
+    // Check URL (normalized)
+    if (history.some(item => normalizeUrl(item.url) === normalizedUrl)) return true;
+
     // Check Title exact match (if provided)
     if (title && history.some(item => item.title === title)) return true;
-    
+
     return false;
 };
 
@@ -46,7 +59,7 @@ export const addToHistory = (items: { url: string; title: string }[]) => {
     const now = new Date().toISOString();
 
     const newItems = items.map(i => ({
-        url: i.url,
+        url: normalizeUrl(i.url), // Save normalized URL
         title: i.title,
         date: now
     }));
@@ -54,8 +67,8 @@ export const addToHistory = (items: { url: string; title: string }[]) => {
     history = [...newItems, ...history];
 
     // Keep only last 1000 items to prevent bloating
-    if (history.length > 1000) {
-        history = history.slice(0, 1000);
+    if (history.length > 2000) { // Increased to 2000 for better coverage
+        history = history.slice(0, 2000);
     }
 
     saveHistory(history);
