@@ -5,6 +5,15 @@ import { sendCombinedNewsReport } from './line';
 import { isDuplicate, addToHistory } from './history';
 
 // Export for server usage
+const normalizeUrlForDedup = (url: string): string => {
+    try {
+        const u = new URL(url);
+        return `${u.protocol}//${u.hostname}${u.pathname}`;
+    } catch (e) {
+        return url;
+    }
+};
+
 export const runBot = async () => {
     console.log('🚀 Starting News Bot...');
 
@@ -27,6 +36,7 @@ export const runBot = async () => {
     // Collect all results first
     const allResults: { genreName: string; items: any[] }[] = [];
     const allItemsForHistory: { url: string; title: string }[] = [];
+    const globalSentUrls = new Set<string>(); // Cross-genre dedup
 
     for (const genre of targetGenres) {
         console.log(`\n--- Processing Genre: ${genre.name} ---`);
@@ -41,9 +51,15 @@ export const runBot = async () => {
             continue;
         }
 
-        // 2. Filter Duplicates (Before AI)
+        // 2. Filter Duplicates (Before AI) - history + cross-genre
         const newItemsRaw = rawResults.filter(item => {
             if (isDuplicate(item.link, item.title)) {
+                return false;
+            }
+            // Also check against items already selected in previous genres
+            const normalized = normalizeUrlForDedup(item.link);
+            if (globalSentUrls.has(normalized)) {
+                console.log(`[CrossGenre] Already selected: ${item.link}`);
                 return false;
             }
             return true;
@@ -64,6 +80,9 @@ export const runBot = async () => {
             console.log('AI filtered out all items.');
             continue;
         }
+
+        // Track URLs globally for cross-genre dedup
+        curatedNews.forEach(n => globalSentUrls.add(normalizeUrlForDedup(n.url)));
 
         // Collect results for combined sending
         allResults.push({

@@ -16,8 +16,10 @@ const fetchGoogle = async (query, dateRestrict = 'd1') => {
         return [];
     }
     const url = 'https://www.googleapis.com/customsearch/v1';
-    const exclusion = '-site:twitter.com -site:x.com -site:facebook.com -site:instagram.com -site:tiktok.com -site:youtube.com -site:note.com';
-    const finalQuery = `${query} ${exclusion}`;
+    // Exclude social media and non-news sites at query level
+    const exclusion = '-site:twitter.com -site:x.com -site:facebook.com -site:instagram.com -site:tiktok.com -site:youtube.com -site:note.com -site:ameblo.jp -filetype:pdf';
+    // Add "ニュース" to bias towards news articles
+    const finalQuery = `${query} ニュース ${exclusion}`;
     const params = {
         key: GOOGLE_KEY,
         cx: CSE_ID,
@@ -35,19 +37,34 @@ const fetchGoogle = async (query, dateRestrict = 'd1') => {
         console.log(`[Search] Raw results for "${query}": ${items.length} items`);
         // Filter Logic
         const filtered = items.filter((item) => {
-            const url = item.link;
+            const itemUrl = item.link;
             const title = item.title;
             const snippet = item.snippet;
-            // Blocked Patterns
+            // Blocked Patterns (URL)
             for (const pattern of config_1.BLOCKED_PATTERNS) {
-                if (pattern.test(url)) {
-                    console.log(`[Search] Blocked: ${url}`);
+                if (pattern.test(itemUrl)) {
+                    console.log(`[Search] Blocked: ${itemUrl}`);
                     return false;
                 }
             }
-            // Must contain Japanese characters (Simple check)
+            // Block PDFs (double check)
+            if (itemUrl.toLowerCase().endsWith('.pdf')) {
+                console.log(`[Search] Blocked PDF: ${itemUrl}`);
+                return false;
+            }
+            // Must contain Japanese characters
             if (!/[\u3040-\u30FF\u4E00-\u9FAF]/.test(title + snippet)) {
                 console.log(`[Search] No Japanese: ${title}`);
+                return false;
+            }
+            // Block category / index pages (URL pattern)
+            if (/\/category\/|\/tag\/|\/tags\/|\/archive\//.test(itemUrl)) {
+                console.log(`[Search] Blocked category page: ${itemUrl}`);
+                return false;
+            }
+            // Block titles that look like site indexes / not articles
+            if (/一覧|カテゴリ|トップページ|ホーム$/.test(title)) {
+                console.log(`[Search] Blocked index page title: ${title}`);
                 return false;
             }
             return true;
@@ -62,14 +79,21 @@ const fetchGoogle = async (query, dateRestrict = 'd1') => {
     }
     catch (error) {
         console.error('[Google Search Error]', error.response?.data?.error || error.message);
-        console.error('[Google Search Error] Full response:', JSON.stringify(error.response?.data || {}));
         return [];
+    }
+};
+// Helper to normalize URL
+const normalizeUrl = (link) => {
+    try {
+        const u = new URL(link);
+        return `${u.protocol}//${u.hostname}${u.pathname}`;
+    }
+    catch (e) {
+        return link;
     }
 };
 const searchNews = async (queries, dateRestrict = 'd1') => {
     let allResults = [];
-    // Process queries in parallel but with limits to avoid rate limits if needed
-    // For now, simple Promise.all is fine for small number of queries
     const promises = queries.map(q => fetchGoogle(q, dateRestrict));
     const results = await Promise.all(promises);
     results.forEach(res => {
@@ -78,21 +102,11 @@ const searchNews = async (queries, dateRestrict = 'd1') => {
     // Dedup by Normalized Link
     const seen = new Set();
     const uniqueResults = allResults.filter(item => {
-        try {
-            const u = new URL(item.link);
-            const normalized = `${u.protocol}//${u.hostname}${u.pathname}`; // Ignore Query Params
-            if (seen.has(normalized))
-                return false;
-            seen.add(normalized);
-            return true;
-        }
-        catch (e) {
-            // Fallback to strict link if URL parse fails
-            if (seen.has(item.link))
-                return false;
-            seen.add(item.link);
-            return true;
-        }
+        const normalized = normalizeUrl(item.link);
+        if (seen.has(normalized))
+            return false;
+        seen.add(normalized);
+        return true;
     });
     return uniqueResults;
 };
