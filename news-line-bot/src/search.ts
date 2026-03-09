@@ -77,8 +77,14 @@ const fetchGoogle = async (query: string, dateRestrict: string = 'd1'): Promise<
             }
 
             // Block titles that look like site indexes / not articles
-            if (/一覧|カテゴリ|トップページ|ホーム$/.test(title)) {
+            if (/一覧$|カテゴリ$|トップページ$|ホーム$/.test(title)) {
                 console.log(`[Search] Blocked index page title: ${title}`);
+                return false;
+            }
+
+            // Block SEO / まとめ / イベント告知タイトル
+            if (/おすすめ\d+選|〜の方法|\d+選$|選び方|比較まとめ|セミナー開催|勉強会|講演会|ウェビナー|体験レポート|口コミ|評判/.test(title)) {
+                console.log(`[Search] Blocked SEO/event title: ${title}`);
                 return false;
             }
 

@@ -9,6 +9,7 @@ const fs_1 = __importDefault(require("fs"));
 const path_1 = __importDefault(require("path"));
 const node_cron_1 = __importDefault(require("node-cron"));
 const index_1 = require("./index");
+const line_1 = require("./line");
 const app = (0, express_1.default)();
 const PORT = process.env.PORT || 3000;
 app.set('view engine', 'ejs');
@@ -152,6 +153,71 @@ app.post('/run', async (req, res) => {
         });
     }
 });
+// =====================================================
+// LINE Webhook エンドポイント
+// LINE Developers コンソールで Webhook URL を
+// https://[your-domain]/webhook に設定してください
+// =====================================================
+app.post('/webhook', line_1.lineMiddleware, async (req, res) => {
+    res.status(200).end(); // LINE は200を期待している
+    const events = req.body.events || [];
+    for (const event of events) {
+        const source = event.source || {};
+        // グループIDを自動キャプチャ
+        if (source.type === 'group' && source.groupId) {
+            const config = loadConfig();
+            const existingId = config.groupNotification?.groupId;
+            if (!existingId) {
+                // 初回: グループIDを保存
+                config.groupNotification = config.groupNotification || {};
+                config.groupNotification.groupId = source.groupId;
+                config.groupNotification.enabled = true;
+                saveConfig(config);
+                console.log(`[Webhook] Group ID を自動保存: ${source.groupId}`);
+            }
+        }
+    }
+});
+// =====================================================
+// グループ通知: 手動メッセージ送信
+// POST /group-notify { message: "..." }
+// =====================================================
+app.post('/group-notify', async (req, res) => {
+    const config = loadConfig();
+    const groupId = config.groupNotification?.groupId;
+    const enabled = config.groupNotification?.enabled;
+    const message = req.body.message || '';
+    if (!enabled) {
+        res.json({ success: false, error: 'グループ通知が無効です (enabled: false)' });
+        return;
+    }
+    if (!groupId) {
+        res.json({ success: false, error: 'groupId 未設定。先にBotをグループに追加してください。' });
+        return;
+    }
+    if (!message.trim()) {
+        res.json({ success: false, error: 'message が空です' });
+        return;
+    }
+    const success = await (0, line_1.sendToGroup)(groupId, message);
+    res.json({ success, groupId, messageLength: message.length });
+});
+// =====================================================
+// グループ通知: ON/OFF 切り替え
+// POST /group-notify-toggle { enabled: true/false }
+// =====================================================
+app.post('/group-notify-toggle', (req, res) => {
+    const config = loadConfig();
+    config.groupNotification = config.groupNotification || {};
+    config.groupNotification.enabled = req.body.enabled === 'true' || req.body.enabled === true;
+    saveConfig(config);
+    const state = config.groupNotification.enabled ? '✅ 有効' : '⛔ 無効';
+    console.log(`[Group Notify] ${state}`);
+    res.json({ success: true, enabled: config.groupNotification.enabled });
+});
 app.listen(Number(PORT), '0.0.0.0', () => {
     console.log(`Server running on port ${PORT}`);
+    console.log(`LINE Webhook URL: https://[your-domain]/webhook`);
+    console.log(`Group Notify:     POST /group-notify { message: "..." }`);
+    console.log(`Toggle ON/OFF:    POST /group-notify-toggle { enabled: true/false }`);
 });

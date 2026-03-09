@@ -54,9 +54,10 @@ const addToHistory = (items) => {
     let history = loadHistory();
     const now = new Date().toISOString();
     const newItems = items.map(i => ({
-        url: normalizeUrl(i.url), // Save normalized URL
+        url: normalizeUrl(i.url),
         title: i.title,
-        date: now
+        date: now,
+        ...(i.category ? { category: i.category } : {}),
     }));
     history = [...newItems, ...history];
     // Keep only last 1000 items to prevent bloating

@@ -1,14 +1,50 @@
-import { Client, TextMessage } from '@line/bot-sdk';
+import { Client, TextMessage, middleware } from '@line/bot-sdk';
 import dotenv from 'dotenv';
 
 dotenv.config();
 
+const lineConfig = {
+    channelAccessToken: process.env.LINE_CHANNEL_ACCESS_TOKEN || '',
+    channelSecret: process.env.LINE_CHANNEL_SECRET || '',
+};
+
 const client = process.env.LINE_CHANNEL_ACCESS_TOKEN
-    ? new Client({
-        channelAccessToken: process.env.LINE_CHANNEL_ACCESS_TOKEN,
-        channelSecret: process.env.LINE_CHANNEL_SECRET,
-    })
+    ? new Client(lineConfig)
     : null;
+
+// LINE Webhook middleware（署名検証付き）
+export const lineMiddleware = middleware(lineConfig);
+
+// ── グループへのプッシュ通知 ─────────────────────────────
+/**
+ * 特定のLINEグループにメッセージを送信する
+ * @param groupId  グループID（Webhookイベントから取得した C000... の文字列）
+ * @param text     送信するテキスト（5000文字以内）
+ */
+export const sendToGroup = async (groupId: string, text: string): Promise<boolean> => {
+    if (!client) {
+        console.error('[LINE] Client not initialized');
+        return false;
+    }
+    if (!groupId) {
+        console.error('[LINE] groupId が未設定です。先にBotをグループに追加してください。');
+        return false;
+    }
+
+    // 5000文字制限
+    const safeText = text.length > 4900 ? text.substring(0, 4900) + '\n...(省略)' : text;
+
+    const message: TextMessage = { type: 'text', text: safeText };
+
+    try {
+        await client.pushMessage(groupId, [message]);
+        console.log(`[LINE] Group push sent to ${groupId}`);
+        return true;
+    } catch (error: any) {
+        console.error(`[LINE Group Error] ${error.originalError?.message || error.message}`);
+        return false;
+    }
+};
 
 // Old function kept for compatibility but not used
 export const sendNewsReport = async (genreName: string, newsList: any[]) => {
@@ -45,19 +81,30 @@ export const sendCombinedNewsReport = async (allResults: { genreName: string; it
         return;
     }
 
-    // Build combined message with title + URL together
-    let messageText = `📰 今日のニュースまとめ\n`;
-    messageText += `━━━━━━━━━━━━━━━\n\n`;
+    const now = new Date();
+    const dateLabel = `${now.getMonth() + 1}/${now.getDate()}`;
+    const GENRE_EMOJI: Record<string, string> = {
+        '教育ニュース': '🏫',
+        'AI・テック':   '🤖',
+        'SNSトレンド':  '📱',
+    };
+
+    let messageText = `📰 ${dateLabel} 今日のニュース\n`;
+    messageText += `━━━━━━━━━━━━━━━\n`;
 
     for (const genre of allResults) {
         if (genre.items.length === 0) continue;
 
-        messageText += `【${genre.genreName}】\n\n`;
+        const emoji = GENRE_EMOJI[genre.genreName] || '📌';
+        messageText += `\n${emoji} ${genre.genreName}\n\n`;
 
-        for (const item of genre.items) {
-            messageText += `・${item.title}\n`;
+        genre.items.forEach((item, i) => {
+            messageText += `${i + 1}. ${item.title}\n`;
+            if (item.summary) {
+                messageText += `→ ${item.summary}\n`;
+            }
             messageText += `${item.url}\n\n`;
-        }
+        });
     }
 
     // LINE message limit is 5000 chars

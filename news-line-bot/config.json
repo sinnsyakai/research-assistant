@@ -14,7 +14,7 @@
                 "AI教育 事例",
                 "GIGAスクール"
             ],
-            "maxItems": 6
+            "maxItems": 3
         },
         {
             "id": "ai",
@@ -27,7 +27,7 @@
                 "Claude 活用",
                 "LLM ビジネス"
             ],
-            "maxItems": 6
+            "maxItems": 3
         },
         {
             "id": "sns",
@@ -39,11 +39,16 @@
                 "ショート動画 収益化",
                 "インフルエンサー マーケティング"
             ],
-            "maxItems": 6
+            "maxItems": 3
         }
     ],
     "globalSettings": {
         "searchPeriod": "d2",
         "sendToLine": true
+    },
+    "groupNotification": {
+        "enabled": false,
+        "groupId": "",
+        "_memo": "groupIdはBotをグループに追加後、自動取得される。enabledをtrueにするとPOST /group-notifyで送信可能"
     }
 }

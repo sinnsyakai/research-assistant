@@ -78,8 +78,8 @@ const runBot = async () => {
             genreName: genre.name,
             items: curatedNews
         });
-        // Collect for history
-        allItemsForHistory.push(...curatedNews.map(n => ({ url: n.url, title: n.title })));
+        // Collect for history（カテゴリも保存して週次まとめで活用）
+        allItemsForHistory.push(...curatedNews.map(n => ({ url: n.url, title: n.title, category: genre.name })));
     }
     // 4. Send all genres in ONE message
     if (settings.sendToLine && allResults.length > 0) {

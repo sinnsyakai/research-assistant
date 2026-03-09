@@ -41,10 +41,13 @@ ${inputData}
 - **PDFファイルや資料集**
 - **カテゴリ一覧ページ、まとめページ、タグページ**
 - **「〜とは？」「〜の方法」などの解説・ハウツー記事**
-- **アフィリエイトブログ、SEO記事**（「2026年最新版」「おすすめ○選」等のタイトル）
-- **プレスリリース（prtimes等）**
-- **個人のSNS投稿、感想、レビュー**
+- **アフィリエイトブログ、SEO記事**（「2026年最新版」「おすすめ○選」「〇選」等のタイトル）
+- **プレスリリース（prtimes等）、および infoseek/livedoor 経由のプレスリリース転載**
+- **セミナー・イベント・勉強会・講演会・ウェビナーの告知・募集記事**
+- **求人情報・採用告知**
+- **個人のSNS投稿、感想、レビュー、口コミ**
 - **アクセスできなさそうなURL（明らかに壊れたパス）**
+- **livedoor、アメブロ等のまとめブログ記事**
 
 ### 選ぶべきニュース
 - **大手メディア（NHK、日経、朝日、読売、毎日、TechCrunch、ITmedia等）の記事を最優先**
@@ -75,9 +78,11 @@ ${inputData}
         // Clean up markdown if present
         const cleanedText = responseText.replace(/```json|```/g, '').trim();
         const newsItems = JSON.parse(cleanedText);
-        // Filter: only importance >= 3
+        // Filter: only importance >= 3、上位maxItems件に絞る
         const filtered = newsItems.filter(item => item.importance >= 3);
-        return filtered.sort((a, b) => b.importance - a.importance);
+        return filtered
+            .sort((a, b) => b.importance - a.importance)
+            .slice(0, maxItems);
     }
     catch (error) {
         console.error('[Gemini AI Error]', error);

@@ -67,10 +67,20 @@ exports.BLOCKED_PATTERNS = [
     /\/edua\/|\/adv\/|\/pr\/|\/sponsored\//i,
     /\/advertorial\/|\/native-ad\//i,
     /prtimes\.jp/i, // Press releases
-    // --- Low-quality SEO blogs ---
+    // --- Low-quality SEO blogs / まとめブログ ---
     /niigatamom/i,
     /1onepiece\.jp/i,
     /koukoku\.jp/i,
+    /livedoor\.com/i, // まとめブログが多い
+    /digital-marketing-leap/i, // 個人SEOブログ
+    /wantedly\.com/i, // 求人サイト
+    /crowdworks\.jp/i, // クラウドソーシング
+    /mybest\.jp/i, // ランキングSEOサイト
+    /ranking\.net/i, // ランキングサイト
+    /care-mane\.com/i, // ケアマネ系SEO
+    // --- prtimes経由の転載 ---
+    /infoseek\.co\.jp\/article\/prtimes/i,
+    /news\.infoseek\.co\.jp\/article\/prtimes/i,
 ];
 // ===== Trusted News Sources (Whitelist for AI scoring boost) =====
 // AI will be instructed to prefer these sources.

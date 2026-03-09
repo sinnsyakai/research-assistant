@@ -8,6 +8,7 @@ interface HistoryItem {
     url: string;
     title: string;
     date: string;
+    category?: string;
 }
 
 // Ensure data directory exists
@@ -54,14 +55,15 @@ export const isDuplicate = (url: string, title?: string): boolean => {
     return false;
 };
 
-export const addToHistory = (items: { url: string; title: string }[]) => {
+export const addToHistory = (items: { url: string; title: string; category?: string }[]) => {
     let history = loadHistory();
     const now = new Date().toISOString();
 
     const newItems = items.map(i => ({
-        url: normalizeUrl(i.url), // Save normalized URL
+        url: normalizeUrl(i.url),
         title: i.title,
-        date: now
+        date: now,
+        ...(i.category ? { category: i.category } : {}),
     }));
 
     history = [...newItems, ...history];
